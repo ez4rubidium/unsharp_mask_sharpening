@@ -54,6 +54,14 @@
                 var percentage = parseInt($("#auto-contrast-percentage").val()) / 100.0;
                 imageproc.autoContrast(inputImage, outputImage, type, percentage);
                 break;
+
+            // Apply unsharp mask
+            case "unsharp-mask":
+                var type = $("#unsharp-mask-type").val();
+                var amount = $("#unsharp-mask-amount").val();
+                var radius = $("#unsharp-mask-radius").val();
+                var threshold = $("#unsharp-mask-threshold").val();
+                imageproc.unsharpMask(inputImage, outputImage, type, amount, radius, threshold);
         }
     }
 

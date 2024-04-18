@@ -79,6 +79,7 @@
                             <li><a class="dropdown-item" href="#threshold">Threshold</a></li>
                             <li><a class="dropdown-item" href="#comic-color">Comic Colour</a></li>
                             <li><a class="dropdown-item" href="#auto-contrast">Automatic Contrast</a></li>
+                            <li><a class="dropdown-item" href="#unsharp-mask">Unsharp Mask</a></li>
                         </ul>
                     </li>
 
@@ -274,6 +275,54 @@
                         </div>
                     </div>
 
+                    <!-- Unsharp Mask -->
+                    <div class="tab-pane" id="unsharp-mask">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-3">
+                                    <label for="unsharp-mask-type">Blur Type:</label>
+                                    <select class="custom-select" id="unsharp-mask-type">
+                                        <option value="gray">Box Blur</option>
+                                        <option value="color">Gaussian Blur</option>
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <label for="unsharp-mask-amount">Amount of contrast difference:</label>
+                                    <div class="input-group">
+                                        <div class="row flex-fill align-items-center mx-0 px-2 border rounded-left form-inline">
+                                            <input class="custom-range" id="unsharp-mask-amount" type="range" value="5" min="0" max="1500" step="1"
+                                            oninput="$(this).parents('.input-group').find('.input-group-text > span').html($(this).val());">
+                                        </div>
+                                        <div class="input-group-append"><span class="input-group-text d-block" style="width: 4em"><span>5</span></span></div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <label for="unsharp-mask-radius">Radius of the bulring kernel:</label>
+                                    <div class="input-group">
+                                        <div class="row flex-fill align-items-center mx-0 px-2 border rounded-left">
+                                            <input class="custom-range" id="unsharp-mask-radius" type="range" value="5" min="0" max="300" step="0.1"
+                                             oninput="$(this).parents('.input-group').find('.input-group-text > span').html($(this).val())">
+                                        </div>
+                                        <div class="input-group-append"><span class="input-group-text d-block" style="width: 4em"><span>5</span></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-3">&nbsp;</div>
+                                <div class="col-4">
+                                    <label for="unsharp-mask-threshold">Threshold for details extraction:</label>
+                                    <div class="input-group">
+                                        <div class="row flex-fill align-items-center mx-0 px-2 border rounded-left">
+                                            <input class="custom-range" id="unsharp-mask-threshold" type="range" value="0" min="0" max="1" step="0.01"
+                                            oninput="$(this).parents('.input-group').find('.input-group-text > span').html($(this).val())">
+                                        </div>
+                                        <div class="input-group-append"><span class="input-group-text d-block" style="width: 4em"><span>0</span></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Blur -->
                     <div class="tab-pane" id="blur">
                         <div class="container-fluid">
@@ -432,5 +481,6 @@
     <script src="js/outline.js"></script>
     <script src="js/main.js"></script>
     <script src="js/layers.js"></script>
+    <script src="js/unsharp.js"></script>
 </body>
 </html>
