@@ -79,104 +79,105 @@
 	}
 
 	imageproc.gaussianBlur = function(cmatrix, cmatrix_length, inputData, outputData, len){
-		let cmatrix_middle = cmatrix_length / 2, row, i, j, count = 0, sum;
-
-		if(cmatrix_length > len){
-			for(row = 0; row < len; ++row){
-				let scale = 0;
-				for(j = 0; j < len; ++j){
-					if(j + cmatrix_middle - row >= 0 && j + cmatrix_middle - row < cmatrix_length)
-						scale += cmatrix[j];
-				}
-
-				let k = 0;
-				sum = new Array(3).fill(0);
-
-				let x = 0;
-				for(i = 0; i < 3; ++i){
+		let cmatrix_middle = Math.floor(cmatrix_length / 2), row, i, j, count = 0, sum;
+		for(let col = 0; col < inputData.height; ++col){
+			if(cmatrix_length > len){
+				for(row = 0; row < len; ++row){
+					let scale = 0;
 					for(j = 0; j < len; ++j){
-						// let image_pixel = imageproc.getPixel(inputData, j, row);
 						if(j + cmatrix_middle - row >= 0 && j + cmatrix_middle - row < cmatrix_length)
-							sum[i] += inputData[(k + x) * 4 + i] * cmatrix[j];
-						x++;
+							scale += cmatrix[j];
 					}
-					outputData.data[count * 4 + i] = sum[i] / scale;
-					
+					// console.log("scale: " + scale);
+					let k = col * len;
+					sum = new Array(3).fill(0);
+
+					let x = 0;
+					for(i = 0; i < 3; ++i){
+						for(j = 0; j < len; ++j){
+							// let image_pixel = imageproc.getPixel(inputData, j, row);
+							if(j + cmatrix_middle - row >= 0 && j + cmatrix_middle - row < cmatrix_length)
+								sum[i] += inputData.data[(k + x) * 4 + i] * cmatrix[j];
+							x++;
+						}
+						outputData.data[count * 4 + i] = Math.round(sum[i] / scale);
+						
+					}
+					// console.log("outputData.data["+ count + "]: R " + outputData.data[count * 4] + " G " + outputData.data[count * 4 + 1] + " B " + + outputData.data[count * 4 + 2]);
+					count++;
 				}
-				console.log("outputData.data["+ count + "]: R " + outputData.data[count * 4] + " G " + outputData.data[count * 4 + 1] + " B " + + outputData.data[count * 4 + 2]);
-				count++;
 			}
-		}
-		else{
+			else{
 
-			for(row = 0; row < cmatrix_middle; ++row){
-				let scale = 0;
-				for(j = cmatrix_middle - row; j < cmatrix_length; ++j){
-					scale += cmatrix[j];
-				}
-
-				let k = 0;
-				sum = new Array(3).fill(0);
-
-				let x = 0;
-				for(i = 0; i < 3; ++i){
+				for(row = 0; row < cmatrix_middle; ++row){
+					let scale = 0;
 					for(j = cmatrix_middle - row; j < cmatrix_length; ++j){
-						// let image_pixel = imageproc.getPixel(inputData, j, row);
-						sum[i] += inputData[(k + x) * 4 + i] * cmatrix[j];
-						x++;
+						// console.log("cmatrix[" + j +  "]: " + cmatrix[j]);	
+						scale += cmatrix[j];
 					}
-					outputData.data[count * 4 + i] = Math.round(sum[i] / scale);
-					
-				}
-				console.log("outputData.data["+ count + "]: R " + outputData.data[count * 4] + " G " + outputData.data[count * 4 + 1] + " B " + + outputData.data[count * 4 + 2]);
-				count++;
-			}
+					// console.log("scale: " + scale);
 
-			for(;row < len - cmatrix_middle; ++row){
-				let k = (row - cmatrix_middle) * 4;
-				for(i = 0; i < 3; ++i){
+					let k = col * len;
 					sum = new Array(3).fill(0);
 
 					let x = 0;
+					for(i = 0; i < 3; ++i){
+						for(j = cmatrix_middle - row; j < cmatrix_length; ++j){
+							// let image_pixel = imageproc.getPixel(inputData, j, row);
+							sum[i] += inputData.data[(k + x) * 4 + i] * cmatrix[j];
+							x++;
+						}
+						outputData.data[count * 4 + i] = Math.round(sum[i] / scale);
+						
+					}
+					// console.log("outputData.data["+ count + "]: R " + outputData.data[count * 4] + " G " + outputData.data[count * 4 + 1] + " B " + + outputData.data[count * 4 + 2]);
+					count++;
+				}
 
-					for(j = 0; j < cmatrix_length; j++){
-						sum[i] += cmatrix[j] * inputData.data[(k + x)* 4 + i];
-						x++;
+				for(;row < len - cmatrix_middle; ++row){
+					let k = col * len + row - cmatrix_middle;
+					for(i = 0; i < 3; ++i){
+						sum = new Array(3).fill(0);
+
+						let x = 0;
+
+						for(j = 0; j < cmatrix_length; j++){
+							sum[i] += cmatrix[j] * inputData.data[(k + x)* 4 + i];
+							x++;
+						}
+						outputData.data[count * 4 + i] = Math.round(sum[i]);
+						
 					}
-					outputData.data[count * 4 + i] = Math.round(sum[i]);
-					
+					// console.log("outputData.data["+ count + "]: R " + outputData.data[count * 4] + " G " + outputData.data[count * 4 + 1] + " B " + + outputData.data[count * 4 + 2]);
+					count++;
 				}
-				console.log("outputData.data["+ count + "]: R " + outputData.data[count * 4] + " G " + outputData.data[count * 4 + 1] + " B " + + outputData.data[count * 4 + 2]);
-				count++;
-			}
-	
-			for(;row < len ; ++row){
-	
-				let scale = 0;
-				for(j = 0; j < len - row + cmatrix_middle; ++j)
-					scale += cmatrix[j];
-	
-				let k = (row - cmatrix_middle);
-	
-				for(i = 0; i < 3; ++i){
-	
-					sum = new Array(3).fill(0);
-	
-					let x = 0;
-	
-					for(j = 0; j < len - row + cmatrix_middle; ++j){
-						sum[i] += cmatrix[j] * inputData.data[(k + x)* 4 + i];
-						x++;
+		
+				for(;row < len ; ++row){
+		
+					let scale = 0;
+					for(j = 0; j < len - row + cmatrix_middle; ++j)
+						scale += cmatrix[j];
+		
+					let k = col * len + row - cmatrix_middle;
+		
+					for(i = 0; i < 3; ++i){
+		
+						sum = new Array(3).fill(0);
+		
+						let x = 0;
+		
+						for(j = 0; j < len - row + cmatrix_middle; ++j){
+							sum[i] += cmatrix[j] * inputData.data[(k + x)* 4 + i];
+							x++;
+						}
+						outputData.data[count * 4 + i] = Math.round(sum[i]);
+						
 					}
-					outputData.data[count * 4 + i] = Math.round(sum[i]);
-					
+					// console.log("outputData.data["+ count + "]: R " + outputData.data[count * 4] + " G " + outputData.data[count * 4 + 1] + " B " + + outputData.data[count * 4 + 2]);
+					count++;
 				}
-				console.log("outputData.data["+ count + "]: R " + outputData.data[count * 4] + " G " + outputData.data[count * 4 + 1] + " B " + + outputData.data[count * 4 + 2]);
-				count++;
 			}
 		}
-
-		
 	}
 
 	imageproc.bilateralBlur = function(inputData, outputData, radius){
@@ -233,7 +234,67 @@
 
 		sum = 0;
 		for (i = 0; i < matrix_length; ++i){
-			console.log("sum: " + sum);
+			// console.log("sum: " + sum);
+			sum += cmatrix[i];
+		}
+		
+		// console.log("sum: " + sum);
+
+		for (i = 0; i < matrix_length; ++i){
+			cmatrix[i] = cmatrix[i] / sum;
+			
+		}
+		
+		// console.log("cmatrix: " + cmatrix + "\ncmatrix_length: " + matrix_length);
+		return [matrix_length, cmatrix];
+	}
+
+	imageproc.gen_convolve_matrix2D = function(radius){
+		console.log("Generate convolutional 2D matrix ...");
+		let i, j, matrix_length, matrix_middle, sum, std_dev, cmatrix;
+		radius = Math.abs(radius) + 1.0;
+		std_dev = radius;
+		radius = std_dev * 2;
+		
+		// console.log("radius: " + radius + " std_dev: " + std_dev);
+
+		matrix_length = 2 * Math.ceil(radius - 0.5) + 1;
+		if(matrix_length <= 0)
+			matrix_length = 1;
+		matrix_middle = Math.floor(matrix_length / 2);
+		cmatrix = Array.from({length: matrix_length}, () => new Float32Array(matrix_length).fill(0.0));
+		// console.log("matrix length: " + matrix_length + " c_matrix: " + cmatrix);
+
+		for(i = matrix_middle + 1; i < matrix_length; ++i){
+			let base_x = i - (matrix_length / 2) - 0.5;
+			sum = 0;
+			for(j = 1; j <= 50; ++j){
+				let r = base_x + 0.02 * j;
+				if(r <= radius)
+					sum += Math.exp(- Math.sqrt(r) / (2 * Math.sqrt(std_dev)));
+			}
+			cmatrix[matrix_middle + 1][i] = sum / 50;
+			cmatrix[i][matrix_middle + 1] = sum / 50;
+
+			// console.log("cmatrix[" + i + "]: " + cmatrix[i]);
+		}
+
+		for(i = 0; i <= matrix_middle; ++i){
+			cmatrix[matrix_middle + 1][i] = cmatrix[matrix_length - 1 - i];
+			cmatrix[i][matrix_middle + 1] = cmatrix[matrix_length - 1 - i];
+			// console.log("cmatrix[" + i + "]: " + cmatrix[i]);
+		}
+
+		sum = 0;
+		for(j = 0; j <= 50; ++j){
+			sum += Math.exp(- Math.sqrt(0.5 + 0.02 * j) / (2 * Math.sqrt(std_dev)));
+		}
+		cmatrix[matrix_middle] = sum / 51;
+		// console.log("cmatrix[" + Math.floor(matrix_length / 2) + "]: " + cmatrix[Math.floor(matrix_length / 2)]);
+
+		sum = 0;
+		for (i = 0; i < matrix_length; ++i){
+			// console.log("sum: " + sum);
 			sum += cmatrix[i];
 		}
 		
