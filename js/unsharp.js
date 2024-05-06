@@ -181,6 +181,8 @@
 	}
 
 	imageproc.bilateralBlur = function(inputData, outputData, radius){
+		// refering https://dl-acm-org.lib.ezproxy.hkust.edu.hk/doi/abs/10.1145/1141911.1141918
+		
 		// const N = Math.floor(Math.sqrt(radius)) * 2;
 		// let hist = Array.from({length: 3}, () => new Int32Array(256).fill(0));
 		// for(var row = 0; row <= 2 * radius; ++row){
