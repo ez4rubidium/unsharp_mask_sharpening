@@ -79,6 +79,7 @@
 	}
 
 	imageproc.gaussianBlur = function(cmatrix, cmatrix_length, inputData, outputData, len){
+		console.log("Applying Gaussian Blur ...");
 		let cmatrix_middle = Math.floor(cmatrix_length / 2), row, i, j, count = 0, sum;
 		for(let col = 0; col < inputData.height; ++col){
 			if(cmatrix_length > len){
@@ -180,19 +181,47 @@
 		}
 	}
 
+	imageproc.gaussianBlur2D = function(cmatrix2D, cmatrix2D_length, inputData, outputData, len){
+		console.log("Applying Gaussian Blur2D ...");
+		var sliding_range = Math.floor(cmatrix2D_length / 2);
+		for (var y = 0; y < inputData.height; y++) {
+			for (var x = 0; x < inputData.width; x++) {
+				let sum_pixel = { r: 0, g: 0, b: 0 };
+				let scale = 0
+				for (var j = - sliding_range; j <= sliding_range; ++j) {
+					for (var i = - sliding_range; i <= sliding_range; ++i) {
+						if(x + i >= 0 && x + i < len && y + j >= 0 && y + j < inputData.height){
+							scale += cmatrix2D[j + sliding_range][i + sliding_range];
+							let kernel_pixel = imageproc.getPixel(inputData, x + i, y + j);
+							// console.log("kernel_pixel: ", kernel_pixel);
+							sum_pixel.r += kernel_pixel.r * cmatrix2D[j + sliding_range][i + sliding_range];
+							sum_pixel.g += kernel_pixel.g * cmatrix2D[j + sliding_range][i + sliding_range];
+							sum_pixel.b += kernel_pixel.b * cmatrix2D[j + sliding_range][i + sliding_range];
+						}
+					}
+				}
+				
+				var i = (x + y * outputData.width) * 4;
+				outputData.data[i]     = Math.round(sum_pixel.r / scale);
+				outputData.data[i + 1] = Math.round(sum_pixel.g / scale);
+				outputData.data[i + 2] = Math.round(sum_pixel.b / scale);
+			}
+		}
+	}
+
 	imageproc.bilateralBlur = function(inputData, outputData, radius){
 		// refering https://dl-acm-org.lib.ezproxy.hkust.edu.hk/doi/abs/10.1145/1141911.1141918
-		
-		// const N = Math.floor(Math.sqrt(radius)) * 2;
-		// let hist = Array.from({length: 3}, () => new Int32Array(256).fill(0));
-		// for(var row = 0; row <= 2 * radius; ++row){
-		// 	for(var col = 0; col <= 2 * radius + N - 1; ++col){
-		// 		let i = (row * inputData.width + col) * 4;
-		// 		hist[0][inputData.data[i]]++;
-		// 		hist[1][inputData.data[i + 1]]++;
-		// 		hist[2][inputData.data[i + 2]]++;
-		// 	}
-		// }
+
+		const N = Math.floor(Math.sqrt(radius)) * 2;
+		let hist = Array.from({length: 3}, () => new Int32Array(256).fill(0));
+		for(var row = 0; row <= 2 * radius; ++row){
+			for(var col = 0; col <= 2 * radius + N - 1; ++col){
+				let i = (row * inputData.width + col) * 4;
+				hist[0][inputData.data[i]]++;
+				hist[1][inputData.data[i + 1]]++;
+				hist[2][inputData.data[i + 2]]++;
+			}
+		}
 	}
 
 	imageproc.gen_convolve_matrix = function(radius){
@@ -253,7 +282,7 @@
 
 	imageproc.gen_convolve_matrix2D = function(radius){
 		console.log("Generate convolutional 2D matrix ...");
-		let i, j, matrix_length, matrix_middle, sum, std_dev, cmatrix;
+		let i, j, k, matrix_length, matrix_middle, sum, std_dev, cmatrix;
 		radius = Math.abs(radius) + 1.0;
 		std_dev = radius;
 		radius = std_dev * 2;
@@ -267,47 +296,58 @@
 		cmatrix = Array.from({length: matrix_length}, () => new Float32Array(matrix_length).fill(0.0));
 		// console.log("matrix length: " + matrix_length + " c_matrix: " + cmatrix);
 
-		for(i = matrix_middle + 1; i < matrix_length; ++i){
-			let base_x = i - (matrix_length / 2) - 0.5;
-			sum = 0;
-			for(j = 1; j <= 50; ++j){
-				let r = base_x + 0.02 * j;
-				if(r <= radius)
-					sum += Math.exp(- Math.sqrt(r) / (2 * Math.sqrt(std_dev)));
+		for(i = matrix_middle; i < matrix_length; ++i){
+			for(j = matrix_middle; j < matrix_length; ++j){
+				if(!(i == j && i == matrix_middle)){
+					let base_x = Math.hypot(i - matrix_middle, j - matrix_middle);
+					sum = 0;
+					for(k = 1; k <= 50; ++k){
+						let r = base_x + 0.02 * k;
+						if(r <= radius)
+							sum += Math.exp(- Math.sqrt(r) / (2 * Math.sqrt(std_dev)));
+					}
+					cmatrix[i][j] = sum / 50;
+				}
+				console.log("cmatrix[" + i + "][" + j + "]: " + cmatrix[i][j]);
 			}
-			cmatrix[matrix_middle + 1][i] = sum / 50;
-			cmatrix[i][matrix_middle + 1] = sum / 50;
-
-			// console.log("cmatrix[" + i + "]: " + cmatrix[i]);
 		}
 
 		for(i = 0; i <= matrix_middle; ++i){
-			cmatrix[matrix_middle + 1][i] = cmatrix[matrix_length - 1 - i];
-			cmatrix[i][matrix_middle + 1] = cmatrix[matrix_length - 1 - i];
+			for(j = 0; j <= matrix_middle; ++j){
+				// cmatrix[i][j] = cmatrix[matrix_length - 1 - i][matrix_length - 1 - j];
+				// cmatrix[i][matrix_length - 1 - j] = cmatrix[i][j];
+				// cmatrix[matrix_length - 1 - i][j] = cmatrix[i][j];
+				cmatrix[matrix_length - 1 - i][j] = cmatrix[i][matrix_length - 1 - j] = cmatrix[i][j] = cmatrix[matrix_length - 1 - i][matrix_length - 1 - j];
 			// console.log("cmatrix[" + i + "]: " + cmatrix[i]);
+			}
+			
 		}
 
 		sum = 0;
 		for(j = 0; j <= 50; ++j){
 			sum += Math.exp(- Math.sqrt(0.5 + 0.02 * j) / (2 * Math.sqrt(std_dev)));
 		}
-		cmatrix[matrix_middle] = sum / 51;
+		cmatrix[matrix_middle][matrix_middle] = sum / 51;
 		// console.log("cmatrix[" + Math.floor(matrix_length / 2) + "]: " + cmatrix[Math.floor(matrix_length / 2)]);
 
 		sum = 0;
 		for (i = 0; i < matrix_length; ++i){
-			// console.log("sum: " + sum);
-			sum += cmatrix[i];
+			for(j = 0; j < matrix_length; ++j){
+				// console.log("sum: " + sum);
+				sum += cmatrix[i][j];
+			}
 		}
 		
 		// console.log("sum: " + sum);
 
 		for (i = 0; i < matrix_length; ++i){
-			cmatrix[i] = cmatrix[i] / sum;
-			
+			for(j = 0; j < matrix_length; ++j){
+				cmatrix[i][j] /= sum;
+				console.log("cmatrix[" + i + "][" + j + "]: " + cmatrix[i][j]);
+			}
 		}
 		
-		// console.log("cmatrix: " + cmatrix + "\ncmatrix_length: " + matrix_length);
+		console.log("cmatrix: " + cmatrix + "\ncmatrix_length: " + matrix_length);
 		return [matrix_length, cmatrix];
 	}
 
@@ -339,9 +379,11 @@
 				break;
 			case "gaussian":
 				if (radius < 10){
-					const [cmatrix_length, cmatrix] = imageproc.gen_convolve_matrix(radius);
+					// const [cmatrix_length, cmatrix] = imageproc.gen_convolve_matrix(radius);
+					const [cmatrix2D_length, cmatrix2D] = imageproc.gen_convolve_matrix2D(radius);
 					// console.log("cmatrix: " + cmatrix + "\ncmatrix_length: " + cmatrix_length);
-					imageproc.gaussianBlur(cmatrix, cmatrix_length, inputData, unsharpBuffer, inputData.width);
+					// console.log("cmatrix2D: " + cmatrix2D + "\ncmatrix_length2D: " + cmatrix_length2D);
+					imageproc.gaussianBlur2D(cmatrix2D, cmatrix2D_length, inputData, unsharpBuffer, inputData.width);
 
 				}else{
 					const box_width = Math.round(radius * 3 * Math.sqrt(2 * Math.PI) / 4);
@@ -373,10 +415,12 @@
 			for (var x = 0; x < inputData.width; x++) {		
 				var i = (x + y * outputData.width) * 4;
 
+				// for debug
 				outputData.data[i] = unsharpBuffer.data[i];
 				outputData.data[i + 1] = unsharpBuffer.data[i + 1];
 				outputData.data[i + 2] = unsharpBuffer.data[i + 2];
 
+				// testing code
 				// var org_hsv = imageproc.fromRGBToHSV(inputData.data[i], inputData.data[i + 1], inputData.data[i + 2]);
 				// var unsharp_hsv = imageproc.fromRGBToHSV(unsharpBuffer.data[i], unsharpBuffer.data[i + 1], unsharpBuffer.data[i + 2]);
 				// let diff = (org_hsv.v - unsharp_hsv.v);
@@ -420,3 +464,4 @@ function median(values){
 	);
   
   }
+
