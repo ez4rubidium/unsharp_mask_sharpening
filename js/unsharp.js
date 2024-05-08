@@ -1,61 +1,9 @@
+const DEBUGFLAG = true;
+
 (function(imageproc) {
     "use strict";
-
-	// imageproc.boxBlur = function(inputData, outputData, box_width, even_offset){
-	// 	var kernel = Array.from({length: box_width}, () => new Array(box_width).fill(1));
-	// 	console.log(kernel.length);
-	// 	var sliding_range = Math.floor(box_width / 2);
-	// 	for (var y = 0; y < inputData.height; y++) {
-	// 		for (var x = 0; x < inputData.width; x++) {
-	// 			var sum_pixel = { r: 0, g: 0, b: 0 };
-	// 			if(box_width % 2){
-	// 				for (var j = - sliding_range; j <= sliding_range; j++) {
-	// 					for (var i = - sliding_range; i <= sliding_range; i++) {
-	// 						var kernel_pixel = imageproc.getPixel(inputData, x + i, y + j);
-	// 						// console.log("kernel_pixel: ", kernel_pixel);
-	// 						sum_pixel.r += kernel_pixel.r * kernel[j + sliding_range][i + sliding_range];
-	// 						sum_pixel.g += kernel_pixel.g * kernel[j + sliding_range][i + sliding_range];
-	// 						sum_pixel.b += kernel_pixel.b * kernel[j + sliding_range][i + sliding_range];
-	// 					}
-	// 				}
-	// 			}else{
-	// 				if(even_offset == -1)
-	// 					for (var j = - sliding_range; j <= sliding_range - 1; ++j) {
-	// 						for (var i = - sliding_range; i <= sliding_range - 1; ++i) {
-	// 							// console.log("kernel_pixel: ", kernel_pixel);
-	// 							var kernel_pixel = imageproc.getPixel(inputData, x + i, y + j);
-	// 							// console.log("kernel[" + (j + sliding_range) + "][" + (i + sliding_range) + "]: " + kernel[j + sliding_range][i + sliding_range]);
-	// 							sum_pixel.r += kernel_pixel.r * kernel[j + sliding_range][i + sliding_range];
-	// 							sum_pixel.g += kernel_pixel.g * kernel[j + sliding_range][i + sliding_range];
-	// 							sum_pixel.b += kernel_pixel.b * kernel[j + sliding_range][i + sliding_range];
-	// 						}
-	// 					}
-	// 				else if(even_offset == 1){
-	// 					for (var j = - sliding_range; j <= sliding_range - 1; ++j) {
-	// 						for (var i = - sliding_range; i <= sliding_range - 1; ++i) {
-	// 							var kernel_pixel = imageproc.getPixel(inputData, x + i + 1, y + j);
-	// 							// console.log("kernel_pixel: ", kernel_pixel);
-	// 							// console.log("kernel[" + (j + sliding_range) + "][" + (i + sliding_range) + "]: " + kernel[j + sliding_range][i + sliding_range]);
-	// 							sum_pixel.r += kernel_pixel.r * kernel[j + sliding_range][i + sliding_range];
-	// 							sum_pixel.g += kernel_pixel.g * kernel[j + sliding_range][i + sliding_range];
-	// 							sum_pixel.b += kernel_pixel.b * kernel[j + sliding_range][i + sliding_range];
-	// 						}
-	// 					}
-	// 				}else{
-	// 					console.log("Error: even_offset mismatch.");
-	// 				}
-	// 			}
-	// 			var i = (x + y * outputData.width) * 4;
-	// 			outputData.data[i]     = sum_pixel.r / (kernel.length ** 2);
-	// 			outputData.data[i + 1] = sum_pixel.g / (kernel.length ** 2);
-	// 			outputData.data[i + 2] = sum_pixel.b / (kernel.length ** 2);
-	// 		}
-	// 	}
-	// }
-
 	imageproc.boxBlur = function(inputData, outputData, box_width, even_offset){
 		console.log("Unsharp Mask: using Box Blur ...")
-		// var kernel = Array.from({length: box_width}, () => new Array(box_width).fill(1));
 		// console.log(kernel.length);
 		var sliding_range = Math.floor(box_width / 2);
 		for (var y = 0; y < inputData.height; y++) {
@@ -130,6 +78,7 @@
 		for(col = 0; col < N; ++col){
 			for(i = 0; i < 3; ++i){
 				flattenArr.splice(0, flattenArr.length);
+				// TODO: optimize the flatten part in O(1) time complexity
 				partialArr = histBuffer[i].map(rows => rows.slice(col, buffer_length + col));
 				partialArr.forEach(rows => { 
 					rows.forEach( ele => {
@@ -182,16 +131,16 @@
 		}	
 	}
 
-	imageproc.gaussianBlur2D = function(cmatrix2D, cmatrix2D_length, inputData, outputData, len){
+	imageproc.gaussianBlur2D = function(cmatrix2D, cmatrix2D_length, inputData, outputData){
 		console.log("Unsharp Mask: using Gaussian Blur2D ...");
-		var sliding_range = Math.floor(cmatrix2D_length / 2);
+		const sliding_range = Math.floor(cmatrix2D_length / 2);
 		for (var y = 0; y < inputData.height; y++) {
 			for (var x = 0; x < inputData.width; x++) {
 				let sum_pixel = { r: 0, g: 0, b: 0 };
 				let scale = 0
 				for (var j = - sliding_range; j <= sliding_range; ++j) {
 					for (var i = - sliding_range; i <= sliding_range; ++i) {
-						if(x + i >= 0 && x + i < len && y + j >= 0 && y + j < inputData.height){
+						if(x + i >= 0 && x + i < inputData.width && y + j >= 0 && y + j < inputData.height){
 							scale += cmatrix2D[j + sliding_range][i + sliding_range];
 							let kernel_pixel = imageproc.getPixel(inputData, x + i, y + j);
 							// console.log("kernel_pixel: ", kernel_pixel);
@@ -215,18 +164,17 @@
 		// refering https://dl-acm-org.lib.ezproxy.hkust.edu.hk/doi/abs/10.1145/1141911.1141918
 		const [cmatrix2D_length, cmatrix2D] = imageproc.gen_convolve_matrix2D(radius);
 		radius = Math.abs(radius) + 1.0;
-		let row, col, i, partialArr, flattenArr = new Array();
+		let row, col, partialArr, scale, i;
 		const N = inputData.width;
-		const buffer_length = 2 * Math.ceil(radius - 0.5) + 1;
-		
-		console.log("buffer_length:", buffer_length, "cmatrix2D_length:", cmatrix2D_length);
+		// const buffer_length = 2 * Math.ceil(radius - 0.5) + 1;
+		// console.log("buffer_length:", buffer_length, "cmatrix2D_length:", cmatrix2D_length);
 
 		// initialize (2r + 1) * (N + 2r) Buffer
-		let histBuffer = new Array(3).fill(0).map(() => new Array(buffer_length).fill(0).map(() => new Uint8Array(buffer_length + N - 1).fill(0)));
+		let histBuffer = new Array(3).fill(0).map(() => new Array(cmatrix2D_length).fill(0).map(() => new Uint8Array(cmatrix2D_length + N - 1).fill(0)));
 
-		for(row = 0; row < buffer_length; ++row){
-			for(col = 0; col < buffer_length + N - 1; ++col){
-				let image_pixel = imageproc.getPixel(inputData, col - Math.floor(buffer_length / 2), row - Math.floor(buffer_length / 2));
+		for(row = 0; row < cmatrix2D_length; ++row){
+			for(col = 0; col < cmatrix2D_length + N - 1; ++col){
+				let image_pixel = imageproc.getPixel(inputData, col - Math.floor(cmatrix2D_length / 2), row - Math.floor(cmatrix2D_length / 2));
 				histBuffer[0][row][col] = image_pixel.r;
 				histBuffer[1][row][col] = image_pixel.g;
 				histBuffer[2][row][col] = image_pixel.b;
@@ -235,52 +183,68 @@
 		}
 
 		for(col = 0; col < N; ++col){
+			let sum_pixel = new Float32Array(3).fill(0);
+			let center_pixel = [
+				imageproc.getPixel(inputData, col, 0).r,
+				imageproc.getPixel(inputData, col, 0).g,
+				imageproc.getPixel(inputData, col, 0).b
+			];
 			for(i = 0; i < 3; ++i){
-				flattenArr.splice(0, flattenArr.length);
-				partialArr = histBuffer[i].map(rows => rows.slice(col, buffer_length + col));
-				partialArr.forEach(rows => { 
-					rows.forEach( ele => {
-						// console.log(" ele: " + ele);
-						flattenArr.push(ele);
+				// TODO: optimize the time complexity for dot product computation
+				scale = 0;
+				partialArr = histBuffer[i].map(rows => rows.slice(col, cmatrix2D_length + col));
+				partialArr.forEach((subRows, y) =>{
+					subRows.forEach((ele, x) =>{
+						if(x + col >= 0 && x + col < inputData.width && y + row >= 0 && y + row < inputData.height){
+							// console.log("partialArr[" + y + "][" + x + "]: " + ele + " check: " + partialArr[y][x]);
+							scale += cmatrix2D[y][x];
+							sum_pixel[i] += ele * cmatrix2D[y][x] * Math.abs(center_pixel[i] - Math.abs(center_pixel[i] - ele));
+						}
 					});
 				});
-				// console.log("flattenArr_length: " + flattenArr.flat(2).length + " flattenArr: " + flattenArr.flat(2));
-				let m = median(flattenArr);
-				// console.log("median: " + m);
-				outputData.data[col * 4 + i] = m;
+				// console.log("sum:", sum_pixel[i]);
+				outputData.data[col * 4 + i] = Math.round(sum_pixel[i] / scale / center_pixel[i]);
 			}
-			
+			// console.log("outputData[" + col + "]: R" + outputData.data[col * 4] + " G" + outputData.data[col * 4 + 1] + " B" + outputData.data[col * 4 + 2]);
 		}
 
 		for(row = 1; row  < N; ++row){
 			for(i = 0; i < 3; ++i){
 				histBuffer[i].shift();
-				histBuffer[i].push(new Uint8Array(buffer_length + N - 1).fill(0));
+				histBuffer[i].push(new Uint8Array(cmatrix2D_length + N - 1).fill(0));
 				// console.log("histBuffer[0].length:", histBuffer[0].length, "histBuffer[0][2].length:", histBuffer[0][2].length);
 			}
 		
-			for(col = 0; col < buffer_length + N - 1; ++col){
-				let image_pixel = imageproc.getPixel(inputData, col - Math.floor(buffer_length / 2), row - Math.floor(buffer_length / 2) + buffer_length - 1);
-				histBuffer[0][buffer_length - 1][col] = image_pixel.r;
-				histBuffer[1][buffer_length - 1][col] = image_pixel.g;
-				histBuffer[2][buffer_length - 1][col] = image_pixel.b;
+			for(col = 0; col < cmatrix2D_length + N - 1; ++col){
+				let image_pixel = imageproc.getPixel(inputData, col - Math.floor(cmatrix2D_length / 2), row - Math.floor(cmatrix2D_length / 2) + cmatrix2D_length - 1);
+				histBuffer[0][cmatrix2D_length - 1][col] = image_pixel.r;
+				histBuffer[1][cmatrix2D_length - 1][col] = image_pixel.g;
+				histBuffer[2][cmatrix2D_length - 1][col] = image_pixel.b;
 				// console.log("histBuffer[" + (buffer_length - 1)  + "][" + col + "]: R " + histBuffer[0][buffer_length - 1][col] + " G " + histBuffer[1][buffer_length - 1][col] + " B " + histBuffer[2][buffer_length - 1][col]);
 			}
 
 			for(col = 0; col < N; ++col){
+				let sum_pixel = new Float32Array(3).fill(0);
+				let center_pixel = [
+					imageproc.getPixel(inputData, col, row).r,
+					imageproc.getPixel(inputData, col, row).g,
+					imageproc.getPixel(inputData, col, row).b
+				];
 				for(i = 0; i < 3; ++i){
-					flattenArr.splice(0, flattenArr.length);
-					partialArr = histBuffer[i].map(rows => rows.slice(col, buffer_length + col));
-					partialArr.forEach(rows => { 
-						rows.forEach( ele => {
-							// console.log(" ele: " + ele);
-							flattenArr.push(ele);
+					// TODO: optimize the time complexity for dot product computation
+					scale = 0;
+					partialArr = histBuffer[i].map(rows => rows.slice(col, cmatrix2D_length + col));
+					partialArr.forEach((subRows, y) =>{
+						subRows.forEach((ele, x) =>{
+							if(x + col >= 0 && x + col < inputData.width && y + row >= 0 && y + row < inputData.height){
+								// console.log("partialArr[" + y + "][" + x + "]: " + ele + " check: " + partialArr[y][x]);
+								scale += cmatrix2D[y][x];
+								sum_pixel[i] += ele * cmatrix2D[y][x] * Math.abs(center_pixel[i] - Math.abs(center_pixel[i] - ele));
+							}
 						});
 					});
-					// console.log("flattenArr_length: " + flattenArr.length + " flattenArr: " + flattenArr);
-					let m = median(flattenArr);
-					// console.log("median: " + m);
-					outputData.data[(row * inputData.width + col) * 4 + i] = m;
+					// console.log("sum:", sum_pixel[i]);
+					outputData.data[(row * inputData.width + col) * 4 + i] = Math.round(sum_pixel[i] / scale / center_pixel[i]);
 				}
 			}
 		}
@@ -385,7 +349,7 @@
 				if (radius < 10){
 					const [cmatrix2D_length, cmatrix2D] = imageproc.gen_convolve_matrix2D(radius);
 					// console.log("cmatrix2D: " + cmatrix2D + "\ncmatrix_length2D: " + cmatrix_length2D);
-					imageproc.gaussianBlur2D(cmatrix2D, cmatrix2D_length, inputData, unsharpBuffer, inputData.width);
+					imageproc.gaussianBlur2D(cmatrix2D, cmatrix2D_length, inputData, unsharpBuffer);
 
 				}else{
 					const box_width = Math.round(radius * 3 * Math.sqrt(2 * Math.PI) / 4);
@@ -428,31 +392,21 @@
 				var i = (x + y * outputData.width) * 4;
 
 				// for debug
-				outputData.data[i] = unsharpBuffer.data[i];
-				outputData.data[i + 1] = unsharpBuffer.data[i + 1];
-				outputData.data[i + 2] = unsharpBuffer.data[i + 2];
-
-				// Testing Code for HSV model
-				// var org_hsv = imageproc.fromRGBToHSV(inputData.data[i], inputData.data[i + 1], inputData.data[i + 2]);
-				// var unsharp_hsv = imageproc.fromRGBToHSV(unsharpBuffer.data[i], unsharpBuffer.data[i + 1], unsharpBuffer.data[i + 2]);
-				// let diff = (org_hsv.v - unsharp_hsv.v);
-				// if(Math.abs(2 * diff) < threshold)
-				// 	diff = 0;
-				// let value = org_hsv.v + amount * diff;
-				// let new_v = Math.max(0, Math.min(parseInt(value), 1));
-				// let new_rgb = imageproc.fromHSVToRGB(org_hsv.h, org_hsv.s, new_v);
-				// outputData.data[i] = new_rgb.r;
-				// outputData.data[i + 1] = new_rgb.g;
-				// outputData.data[i + 2] = new_rgb.b;
+				if(DEBUGFLAG){
+					outputData.data[i] = unsharpBuffer.data[i];
+					outputData.data[i + 1] = unsharpBuffer.data[i + 1];
+					outputData.data[i + 2] = unsharpBuffer.data[i + 2];
+				}else{
 
 				// Real Operation Code
-				// for(var color = 0; color < 3; ++color){
-				// 	let diff = (inputData.data[i + color] - unsharpBuffer.data[i + color]);
-				// 	if(Math.abs(2 * diff) < threshold * 64)
-				// 		diff = 0;
-				// 	let new_color = Math.max(0, Math.min(parseInt(inputData.data[i + color] + amount * diff), 255));
-				// 	outputData.data[i + color] = new_color;
-				// }
+					for(var color = 0; color < 3; ++color){
+						let diff = (inputData.data[i + color] - unsharpBuffer.data[i + color]);
+						if(Math.abs(2 * diff) < threshold * 64)
+							diff = 0;
+						let new_color = Math.max(0, Math.min(parseInt(inputData.data[i + color] + amount * diff), 255));
+						outputData.data[i + color] = new_color;
+					}
+				}
 			}
 		}
     }
@@ -474,7 +428,7 @@ function radixSort(arr) {
 	return arr;
   }
   
- // Counting Sort helper function
+// Counting Sort helper function
 function countingSort(arr, exp) {
 	const n = arr.length;
 	const output = new Array(n).fill(0);
