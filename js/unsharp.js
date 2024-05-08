@@ -1,4 +1,4 @@
-const DEBUGFLAG = true;
+const DEBUGMODE = false;
 
 (function(imageproc) {
     "use strict";
@@ -162,10 +162,12 @@ const DEBUGFLAG = true;
 	imageproc.bilateralBlur = function(inputData, outputData, radius){
 		console.log("Unsharp Mask: using Bilateral Blur ...");
 		// refering https://dl-acm-org.lib.ezproxy.hkust.edu.hk/doi/abs/10.1145/1141911.1141918
+		// refering https://ieeexplore.ieee.org/abstract/document/710815
 		const [cmatrix2D_length, cmatrix2D] = imageproc.gen_convolve_matrix2D(radius);
 		radius = Math.abs(radius) + 1.0;
-		let row, col, partialArr, scale, i;
+		let row, col, partialArr, scale_g, scale_r, mu0, i;
 		const N = inputData.width;
+		const SIGMA = radius * 10; 
 		// const buffer_length = 2 * Math.ceil(radius - 0.5) + 1;
 		// console.log("buffer_length:", buffer_length, "cmatrix2D_length:", cmatrix2D_length);
 
@@ -191,24 +193,29 @@ const DEBUGFLAG = true;
 			];
 			for(i = 0; i < 3; ++i){
 				// TODO: optimize the time complexity for dot product computation
-				scale = 0;
+				scale_g = scale_r = mu0 = 0;
 				partialArr = histBuffer[i].map(rows => rows.slice(col, cmatrix2D_length + col));
 				partialArr.forEach((subRows, y) =>{
 					subRows.forEach((ele, x) =>{
 						if(x + col >= 0 && x + col < inputData.width && y + row >= 0 && y + row < inputData.height){
 							// console.log("partialArr[" + y + "][" + x + "]: " + ele + " check: " + partialArr[y][x]);
-							scale += cmatrix2D[y][x];
-							sum_pixel[i] += ele * cmatrix2D[y][x] * Math.abs(center_pixel[i] - Math.abs(center_pixel[i] - ele));
+							// count++;
+							mu0 = Math.exp(- (((Math.hypot(center_pixel[i] - ele)) / SIGMA) ** 2) / 2);
+							// ro0.push(ele);
+							// console.log("mu0:", mu0);
+							scale_g += cmatrix2D[y][x];
+							// scale_r += mu0;
+							sum_pixel[i] += ele * cmatrix2D[y][x] * mu0;
 						}
 					});
 				});
-				// console.log("sum:", sum_pixel[i]);
-				outputData.data[col * 4 + i] = Math.round(sum_pixel[i] / scale / center_pixel[i]);
+				// console.log("scale_r:", scale_r);
+				outputData.data[col * 4 + i] = Math.round(sum_pixel[i] / scale_g );
 			}
 			// console.log("outputData[" + col + "]: R" + outputData.data[col * 4] + " G" + outputData.data[col * 4 + 1] + " B" + outputData.data[col * 4 + 2]);
 		}
 
-		for(row = 1; row  < N; ++row){
+		for(row = 1; row  < inputData.height; ++row){
 			for(i = 0; i < 3; ++i){
 				histBuffer[i].shift();
 				histBuffer[i].push(new Uint8Array(cmatrix2D_length + N - 1).fill(0));
@@ -232,19 +239,24 @@ const DEBUGFLAG = true;
 				];
 				for(i = 0; i < 3; ++i){
 					// TODO: optimize the time complexity for dot product computation
-					scale = 0;
+					scale_g = scale_r = mu0 = 0;
 					partialArr = histBuffer[i].map(rows => rows.slice(col, cmatrix2D_length + col));
 					partialArr.forEach((subRows, y) =>{
 						subRows.forEach((ele, x) =>{
 							if(x + col >= 0 && x + col < inputData.width && y + row >= 0 && y + row < inputData.height){
 								// console.log("partialArr[" + y + "][" + x + "]: " + ele + " check: " + partialArr[y][x]);
-								scale += cmatrix2D[y][x];
-								sum_pixel[i] += ele * cmatrix2D[y][x] * Math.abs(center_pixel[i] - Math.abs(center_pixel[i] - ele));
+								// count++;
+								mu0 = Math.exp(- (((Math.hypot(center_pixel[i] - ele)) / SIGMA) ** 2) / 2);
+								// ro0.push(ele);
+								scale_g += cmatrix2D[y][x];
+								// scale_r += mu0;
+								sum_pixel[i] += ele * cmatrix2D[y][x] * mu0;
 							}
 						});
 					});
-					// console.log("sum:", sum_pixel[i]);
-					outputData.data[(row * inputData.width + col) * 4 + i] = Math.round(sum_pixel[i] / scale / center_pixel[i]);
+
+					// console.log("scale_r:", scale_r);
+					outputData.data[(row * inputData.width + col) * 4 + i] = Math.round(sum_pixel[i] / scale_g );
 				}
 			}
 		}
@@ -252,10 +264,10 @@ const DEBUGFLAG = true;
 
 	imageproc.gen_convolve_matrix2D = function(radius){
 		console.log("Generate convolutional 2D matrix ...");
-		let i, j, k, matrix_length, matrix_middle, sum, std_dev, cmatrix;
+		let i, j, k, matrix_length, matrix_middle, sum, cmatrix;
 		radius = Math.abs(radius) + 1.0;
 		// align the matrix length with bilteral filtering
-		std_dev = radius / 2;
+		const std_dev = radius / 2;
 		// radius = std_dev * 2;
 		
 		// console.log("radius: " + radius + " std_dev: " + std_dev);
@@ -275,7 +287,7 @@ const DEBUGFLAG = true;
 					for(k = 1; k <= 50; ++k){
 						let r = base_x + 0.02 * k;
 						if(r <= radius)
-							sum += Math.exp(- Math.sqrt(r) / (2 * Math.sqrt(std_dev)));
+							sum += Math.exp(- ((r / std_dev) ** 2) / 2);
 					}
 					cmatrix[i][j] = sum / 50;
 				}
@@ -293,7 +305,7 @@ const DEBUGFLAG = true;
 
 		sum = 0;
 		for(j = 0; j <= 50; ++j){
-			sum += Math.exp(- Math.sqrt(0.5 + 0.02 * j) / (2 * Math.sqrt(std_dev)));
+			sum += Math.exp(- (((0.5 + 0.02 * j) / std_dev) ** 2) / 2);
 		}
 		cmatrix[matrix_middle][matrix_middle] = sum / 51;
 		// console.log("cmatrix[" + Math.floor(matrix_length / 2) + "]: " + cmatrix[Math.floor(matrix_length / 2)]);
@@ -392,7 +404,7 @@ const DEBUGFLAG = true;
 				var i = (x + y * outputData.width) * 4;
 
 				// for debug
-				if(DEBUGFLAG){
+				if(DEBUGMODE){
 					outputData.data[i] = unsharpBuffer.data[i];
 					outputData.data[i + 1] = unsharpBuffer.data[i + 1];
 					outputData.data[i + 2] = unsharpBuffer.data[i + 2];
