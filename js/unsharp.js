@@ -1,4 +1,4 @@
-const DEBUGMODE = false;
+const DEBUGMODE = true;
 
 (function(imageproc) {
     "use strict";
@@ -80,10 +80,12 @@ const DEBUGMODE = false;
 				flattenArr.splice(0, flattenArr.length);
 				// TODO: optimize the flatten part in O(1) time complexity
 				partialArr = histBuffer[i].map(rows => rows.slice(col, buffer_length + col));
-				partialArr.forEach(rows => { 
-					rows.forEach( ele => {
+				partialArr.forEach((rows , y) => { 
+					rows.forEach((ele, x) => {
 						// console.log(" ele: " + ele);
-						flattenArr.push(ele);
+						if(x + col - Math.floor(buffer_length / 2) >= 0 && x + col - Math.floor(buffer_length / 2)< inputData.width && y - Math.floor(buffer_length / 2)>= 0 && y - Math.floor(buffer_length / 2)< inputData.height){
+							flattenArr.push(ele);
+						}
 					});
 				});
 				// console.log("flattenArr_length: " + flattenArr.flat(2).length + " flattenArr: " + flattenArr.flat(2));
@@ -94,7 +96,7 @@ const DEBUGMODE = false;
 			
 		}
 
-		for(row = 1; row  < N; ++row){
+		for(row = 1; row  < inputData.height; ++row){
 			for(i = 0; i < 3; ++i){
 				histBuffer[i].shift();
 				histBuffer[i].push(new Uint8Array(buffer_length + N - 1).fill(0));
@@ -114,10 +116,12 @@ const DEBUGMODE = false;
 					flattenArr.splice(0, flattenArr.length);
 					// TODO: optimize the flatten part in O(1) time complexity
 					partialArr = histBuffer[i].map(rows => rows.slice(col, buffer_length + col));
-					partialArr.forEach(rows => { 
-						rows.forEach( ele => {
+					partialArr.forEach((rows, y) => { 
+						rows.forEach((ele, x) => {
+							if(x + col - Math.floor(buffer_length / 2) >= 0 && x + col - Math.floor(buffer_length / 2)< inputData.width && y + row - Math.floor(buffer_length / 2)>= 0 && y + row - Math.floor(buffer_length / 2)< inputData.height){
 							// console.log(" ele: " + ele);
-							flattenArr.push(ele);
+								flattenArr.push(ele);
+							}
 						});
 					});
 					// console.log("flattenArr_length: " + flattenArr.length + " flattenArr: " + flattenArr);
@@ -197,7 +201,7 @@ const DEBUGMODE = false;
 				partialArr = histBuffer[i].map(rows => rows.slice(col, cmatrix2D_length + col));
 				partialArr.forEach((subRows, y) =>{
 					subRows.forEach((ele, x) =>{
-						if(x + col >= 0 && x + col < inputData.width && y + row >= 0 && y + row < inputData.height){
+						if(x + col - Math.floor(cmatrix2D_length / 2) >= 0 && x + col - Math.floor(cmatrix2D_length / 2)< inputData.width && y + row - Math.floor(cmatrix2D_length / 2)>= 0 && y + row - Math.floor(cmatrix2D_length / 2)< inputData.height){
 							// console.log("partialArr[" + y + "][" + x + "]: " + ele + " check: " + partialArr[y][x]);
 							// count++;
 							mu0 = Math.exp(- (((Math.hypot(center_pixel[i] - ele)) / SIGMA) ** 2) / 2);
@@ -243,7 +247,7 @@ const DEBUGMODE = false;
 					partialArr = histBuffer[i].map(rows => rows.slice(col, cmatrix2D_length + col));
 					partialArr.forEach((subRows, y) =>{
 						subRows.forEach((ele, x) =>{
-							if(x + col >= 0 && x + col < inputData.width && y + row >= 0 && y + row < inputData.height){
+							if(x + col - Math.floor(cmatrix2D_length / 2) >= 0 && x + col - Math.floor(cmatrix2D_length / 2) < inputData.width && y + row - Math.floor(cmatrix2D_length / 2) >= 0 && y + row - Math.floor(cmatrix2D_length / 2) < inputData.height){
 								// console.log("partialArr[" + y + "][" + x + "]: " + ele + " check: " + partialArr[y][x]);
 								// count++;
 								mu0 = Math.exp(- (((Math.hypot(center_pixel[i] - ele)) / SIGMA) ** 2) / 2);
