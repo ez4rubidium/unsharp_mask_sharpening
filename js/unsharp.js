@@ -419,7 +419,7 @@ const DEBUGMODE = false;
 						let diff = (inputData.data[i + color] - unsharpBuffer.data[i + color]);
 						if(Math.abs(2 * diff) < threshold * 64)
 							diff = 0;
-						let new_color = Math.max(0, Math.min(parseInt(inputData.data[i + color] + (amount / 100) * diff), 255));
+						let new_color = Math.max(0, Math.min(parseInt(inputData.data[i + color] + amount * diff), 255));
 						outputData.data[i + color] = new_color;
 					}
 				}
