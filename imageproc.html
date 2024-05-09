@@ -292,10 +292,10 @@
                                     <label for="unsharp-mask-amount">Amount of contrast difference:</label>
                                     <div class="input-group">
                                         <div class="row flex-fill align-items-center mx-0 px-2 border rounded-left form-inline">
-                                            <input class="custom-range" id="unsharp-mask-amount" type="range" value="0.5" min="0" max="300" step="0.1"
+                                            <input class="custom-range" id="unsharp-mask-amount" type="range" value="50" min="0" max="300" step="0.1"
                                             oninput="$(this).parents('.input-group').find('.input-group-text > span').html($(this).val());">
                                         </div>
-                                        <div class="input-group-append"><span class="input-group-text d-block" style="width: 4em"><span>5</span></span></div>
+                                        <div class="input-group-append"><span class="input-group-text d-block" style="width: 4em"><span>50</span>%</span></div>
                                     </div>
                                 </div>
                                 <div class="col-4">
@@ -305,12 +305,12 @@
                                             <input class="custom-range" id="unsharp-mask-radius" type="range" value="3" min="0" max="30" step="0.1"
                                              oninput="$(this).parents('.input-group').find('.input-group-text > span').html($(this).val())">
                                         </div>
-                                        <div class="input-group-append"><span class="input-group-text d-block" style="width: 4em"><span>5</span></span></div>
+                                        <div class="input-group-append"><span class="input-group-text d-block" style="width: 4em"><span>3</span></span></div>
                                     </div>
                                 </div>
                             </div>
                             <div class="row mt-2">
-                                <div class="col-3">&nbsp;</div>
+                                <!-- <div class="col-1">&nbsp;</div> -->
                                 <div class="col-4">
                                     <label for="unsharp-mask-threshold">Threshold for details extraction:</label>
                                     <div class="input-group">
@@ -319,6 +319,15 @@
                                             oninput="$(this).parents('.input-group').find('.input-group-text > span').html($(this).val())">
                                         </div>
                                         <div class="input-group-append"><span class="input-group-text d-block" style="width: 4em"><span>0</span></span></div>
+                                    </div>
+                                </div>
+                                <div class="col-8">
+                                    <label for="unsharp-mask-hint">Hints for using unsharp mask:</label>
+                                    <div>
+                                        <p>
+                                            Try to decrease Amount of contrast difference and Radius of the bluring kernel, and 
+                                            increase the Threshold for details extraction to get a better result (less halo artifacts​).
+                                        </p>
                                     </div>
                                 </div>
                             </div>
