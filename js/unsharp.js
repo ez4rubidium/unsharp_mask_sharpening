@@ -1,4 +1,4 @@
-const DEBUGMODE = true;
+const DEBUGMODE = false;
 
 (function(imageproc) {
     "use strict";
